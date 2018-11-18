@@ -7,8 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   
-  <link rel="shortcut icon" href="../favicon1.ico">
-  
+  <link rel="shortcut icon" href="../img/favicon.ico">
   <title>Desenvolvimento do Projeto - iEstufa</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
@@ -59,6 +58,17 @@
     <a class="current" href="./">Desenvolvimento do Projeto</a>
     <ul class="subnav">
             
+    <li class="toctree-l2"><a href="#desenvolvimento">Desenvolvimento</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#materiais-e-metodos">Materiais e Métodos</a></li>
+        
+            <li><a class="toctree-l3" href="#processo-de-desenvolvimento">Processo de Desenvolvimento</a></li>
+        
+        </ul>
+    
+
     </ul>
 	    </li>
           
@@ -99,7 +109,110 @@
           <div role="main">
             <div class="section">
               
-                
+                <h1 id="desenvolvimento">Desenvolvimento</h1>
+<p>Nesta página, encontra-se como se deu o desenvolvimento da "iEstufa".</p>
+<h2 id="materiais-e-metodos">Materiais e Métodos</h2>
+<h3 id="hardware">Hardware</h3>
+<p><strong>Sensor de Umidade e Temperatura DHT11</strong>: Inicialmente esse sensor cuidaria de ambos, temperatura e umidade, porém, confirmamos que, no próprio laboratório, já havia um sensor de umidade mais preciso, assim o sensor DHT11 foi usado apenas para medir a temperatura da iEstufa.</p>
+<p><strong>Sensor de Umidade de Solo (YI-69)</strong>: Esse sensor já estava disponível no laboratório antes da realização do trabalho e nos foi disponibilizado para a realização do mesmo. Optamos por usar esse sensor ao invés do DHT11 para medir a umidade do solo pois ele se mostrou mais preciso.</p>
+<p><strong>Sensor Ultrassônico HC-SR04</strong>: Esse sensor foi utilizado para medir o nível da água dentro do recipiente onde ela seria armazenada. No momento que a quantidade disponível de água se torna insuficiente, um LED presente na protoboard que está geralmente aceso, se apaga, notificando os usuários de que é necessário reabastecer o suprimento de água.</p>
+<p><strong>Placa Arduino UNO</strong>: É o microcontrolador utilizado para controlar e integrar os componentes do circuito. </p>
+<p><strong>Invólucro de Aquário</strong>: Recipiente utilizado para criar um ambiente onde a temperatura e umidade pudessem ser regulados.</p>
+<p><strong>Tampa de Madeira</strong>: Tampa feita sob medida para o invólucro de aquário para facilitar a implementação de componentes como a lâmpada incandescente e para dar uma superfície sólida para apoiar partes físicas da iEstufa, como a protoboard e a placa Arduino UNO. Foi feita com o auxílio do professor Alexandre de Desenho Técnico Auxiliado por Computador.</p>
+<p><strong>Bomba de Aquário</strong>: Usada para retirar a água do recipiente onde esta é armazenada quando isso se faz necessário.</p>
+<p><strong>Lâmpada Incandescente</strong>: Usada para aquecer o ambiente da iEstufa quando é detectada uma temperatura abaixo de 19ºC.</p>
+<p><strong>Relés</strong>: Usados para controlar a bomba de aquário e a lâmpada incandescente. Quando é detectada a condição de ativação de alguma delas, seu respectivo relé passará a permitir a passagem de corrente, assim ativando o componente necessário.</p>
+<p><strong>Balde Comum</strong>: Recipiente onde é armazenada a água a ser usada na iEstufa.</p>
+<p><strong>Termômetro infravermelho</strong>: Usado para medir a temperatura dos componentes e ver se estes estavam funcionando corretamente. </p>
+<h3 id="software">Software</h3>
+<p>O software utilizado na iEstufa foi desenvolvido em C++, na IDE Arduino.</p>
+<pre><code class="c++">//Inclui a biblioteca &quot;Ultrasonic.h&quot;, para que o sensor ultrassônico seja utilizado
+#include &lt;Ultrasonic.h&gt;
+//Inclui a biblioteca &quot;DHT.h&quot;, para que o sensor de umidade e temperatura seja utilizado
+#include &quot;DHT.h&quot;
+//O segmento de código a seguir define constantes que indicam os pinos dos Relés e sensores
+#define pino_sinal_analogico A0
+#define DHTPIN A1
+#define releLampada 7
+#define releBomba 8
+#define pino_trigger 4
+#define pino_echo 5
+//Define o tipo de sensor DHT(Umidade e temperatura)
+#define DHTTYPE DHT11
+//Variável para ler os valores do sensor de umiade,
+int umidade;
+//Inicializa o sensor ultrassônico nos pinos echo e trigger
+Ultrasonic ultrasonic(pino_trigger, pino_echo);
+//Inicializa o sensor de umidade e temperatura
+DHT dht(DHTPIN, DHTTYPE);
+//2 é o pino do LED de aviso do baixo nível
+void setup() {
+  pinMode(2, OUTPUT);
+  pinMode(releLampada, OUTPUT);
+  pinMode(releBomba, OUTPUT);
+  Serial.begin(9600);
+  dht.begin();
+}
+
+void loop() {
+  digitalWrite(releBomba, HIGH);
+  //Declaração e criação das variáveis que serão utilizadas ao decorrer do programa
+  float Nivel, valor, temperatura;
+  long microsec = ultrasonic.timing();
+  Nivel= ultrasonic.convert(microsec, Ultrasonic::CM);
+  temperatura=  dht.readTemperature();
+  umidade = analogRead(pino_sinal_analogico);
+  Serial.print(&quot;NIVEL &quot;);
+  Serial.print(Nivel);
+  Serial.print(&quot;\n&quot;);
+  Serial.print(&quot;TEMPERATURA: &quot;);
+  Serial.print(temperatura);
+  Serial.print(&quot;\n&quot;);
+  Serial.print(&quot;UMIDADE: &quot;);
+  Serial.print(umidade);
+  Serial.print(&quot;\n&quot;);
+  //O segmento de código a seguir informa a necessidade de se colocar ou não colocar mais água no reservatório
+    if(Nivel&gt;15){
+      digitalWrite(2, HIGH);
+    }
+    else{
+      digitalWrite(2, LOW);
+    }
+  delay(5000);
+  //O segmento de código a seguir é um controlador on-off para controlar a temperatura
+  if(temperatura&lt;19){
+    digitalWrite(7, LOW);
+  }
+  else{
+    digitalWrite(7, HIGH);
+  }
+  delay(5000);
+  //O segmento de código a seguir é um controlador on-off para controlar a umidade
+  if(umidade &gt; 800 &amp;&amp; umidade &lt; 1024 &amp;&amp; Nivel&gt;15){
+    digitalWrite(releBomba, LOW);
+    delay(3000);
+    digitalWrite(releBomba, HIGH);
+  }
+  else{
+    digitalWrite(releBomba, HIGH);
+  }
+  delay(10000);
+}
+</code></pre>
+
+<h2 id="processo-de-desenvolvimento">Processo de Desenvolvimento</h2>
+<p>Durante o primeiro dia do trabalho, discutimos como o projeto seria realizado e que estratégias iríamos usar para realizar cada parte da iEstufa.
+O primeiro assunto abordado foi a produção da tampa para o aquário. Assim, produzimos desenhos de cada peça que seria usada na fabricação da tampa e os apresentamos ao professor Alexandre que nos auxiliou na produção desta. 
+Mais tarde seria feito um furo na parte de cima da tampa para a introdução da lâmpada incandescente que aqueceria o sistema em caso de queda na temperatura.
+Para evitar que houvessem erros no projeto final, após a finalização do recipiente que teria a iEstufa, testamos separadamente cada um dos componentes. Não houveram problemas significativos no funcionamento de nenhum componente específico no sistema, com exceção da lâmpada, que não acendeu nos testes iniciais.
+Quanto à lâmpada, primeiro pensamos que o problema fosse com a boquilha usada na conexão, chegamos inclusive, a comprar uma boquilha nova para que fosse substituída, contudo, isso se mostrou desnecessário, já que em testes subsequentes a lâmpada funcionou normalmente. Imaginamos que ela não funcionou como esperado da primeira vez por conta de mal contato com algum fio. Após esse pequeno contratempo, os testes seguintes seguiram tranquilamente.
+Um problema muito recorrente durante a execução do trabalho eram os erros na IDE, uma vez que essa às vezes não reconhecia o arduino, não carregava ou não tinha as bibliotecas necessárias para os componentes, nesse qual era necessário só instalá-los pela internet. Nos outros casos, era necessário tentar trocar a porta do arduino, ou então, trocar de computador. 
+Outro contratempo sem contudo, relação com os componentes eletrônicos, foi a amostra de terra utilizada para a realização do projeto. Esta acabou tendo de ser coletada durante um dia chuvoso, assim, ela ainda se encontrava molhada ao ser colocada dentro da iEstufa, situação que acabou sendo agravada pelos testes realizados com a bomba de água.
+Além disso, o aquário era antigo, e logo, quando colocava água nele, o cheiro de peixe que havia nele ressurgia, o que causava um odor desagradável. </p>
+<p>Projeto finalizado: </p>
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/RFzAWNr"><a href="//imgur.com/RFzAWNr"></a></blockquote>
+
+<script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
               
             </div>
           </div>
